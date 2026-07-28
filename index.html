@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Реакция</title>
+<style>
+  @font-face{
+    font-family: 'ST Rome Trial';
+    src: url('STRomeTrial-Medium.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face{
+    font-family: 'ST Rome Trial';
+    src: url('STRomeTrial-Bold.woff') format('woff');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+</style>
+<style>
+  :root{
+    --bg-1: #0a0a0c;
+    --bg-2: #0a0a0c;
+    --bg-3: #0a0a0c;
+    --glow-x: 50%;
+    --glow-y: 40%;
+  }
+
+  *{ box-sizing: border-box; margin:0; padding:0; }
+
+  html, body{
+    height: 100%;
+    background: #050506;
+    overflow: hidden;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body{
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  #ambient{
+    position: fixed;
+    inset: -10%;
+    z-index: 0;
+    background:
+      radial-gradient(circle at var(--glow-x) var(--glow-y), var(--bg-1) 0%, transparent 55%),
+      radial-gradient(circle at 80% 80%, var(--bg-2) 0%, transparent 60%),
+      radial-gradient(circle at 15% 85%, var(--bg-3) 0%, transparent 60%),
+      #050506;
+    filter: blur(60px) saturate(1.3);
+    transition: background 0.4s linear;
+    pointer-events: none;
+  }
+
+  #brand{
+    position: fixed;
+    top: 22px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    color: rgba(255,255,255,0.9);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.6s ease 0.15s, text-shadow 0.3s ease;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+
+  #brand.show{
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #brand.pulse-once{
+    text-shadow: 0 0 18px rgba(255,255,255,0.9);
+  }
+
+  .spark{
+    position: fixed;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #fff;
+    pointer-events: none;
+    z-index: 20;
+    animation: sparkBurst 0.85s ease-out forwards;
+  }
+
+  @keyframes sparkBurst{
+    0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) scale(0.3); opacity: 0; }
+  }
+
+  /* --- вкладки переключения страниц --- */
+  #tabs{
+    position: fixed;
+    top: 46px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    display: flex;
+    gap: 6px;
+    padding: 5px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 999px;
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    transition: opacity 0.6s ease 0.2s;
+  }
+
+  #tabs.show{ opacity: 1; }
+
+  #tabs button{
+    all: unset;
+    cursor: pointer;
+    padding: 8px 18px;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.6);
+    border-radius: 999px;
+    transition: color 0.25s ease, background 0.25s ease;
+  }
+
+  #tabs button.active{
+    color: #050506;
+    background: #ffffff;
+  }
+
+  #stage{
+    position: relative;
+    z-index: 2;
+    width: min(92vw, 460px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    padding-top: 105px;
+  }
+
+  /* --- gesture gate --- */
+  #gate{
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    background: rgba(5,5,6,0.4);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+    transition: opacity 0.6s ease;
+  }
+
+  #gate.hidden{
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ring{
+    position: relative;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* мягкое свечение позади кружка */
+  .ring::after{
+    content: '';
+    position: absolute;
+    inset: -40px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.16) 0%, transparent 70%);
+    filter: blur(4px);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .pulse-ring{
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.5);
+    animation: pulse 2.4s ease-out infinite;
+    pointer-events: none;
+  }
+
+  .pulse-ring:nth-child(2){ animation-delay: 0.8s; }
+  .pulse-ring:nth-child(3){ animation-delay: 1.6s; }
+
+  .ring svg{
+    width: 40px;
+    height: 40px;
+    overflow: visible;
+  }
+
+  .ring .k-stroke{
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  @keyframes pulse{
+    0%   { transform: scale(1);   opacity: 0.9; }
+    100% { transform: scale(2.1); opacity: 0; }
+  }
+
+  /* плавающие частицы на экране жеста */
+  #particles{
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .particle{
+    position: absolute;
+    bottom: -10px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    animation: floatUp linear infinite;
+  }
+
+  @keyframes floatUp{
+    0%   { transform: translateY(0) translateX(0);   opacity: 0; }
+    10%  { opacity: 0.6; }
+    90%  { opacity: 0.4; }
+    100% { transform: translateY(-100vh) translateX(var(--drift, 20px)); opacity: 0; }
+  }
+
+  #gate p{
+    color: rgba(255,255,255,0.75);
+    font-family: 'ST Rome Trial', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* --- video frames (одна страница = один .page) --- */
+  .page{
+    display: none;
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .page.active{
+    display: flex;
+  }
+
+  .frame{
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-height: 62vh;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .frame.show{
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  #like-btn{
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #like-btn svg{
+    width: 34px;
+    height: 34px;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+  }
+
+  #like-btn .heart-outline{
+    fill: rgba(255,255,255,0.85);
+    transition: transform 0.25s ease;
+  }
+
+  #like-btn.liked .heart-outline{
+    fill: #ff3b5c;
+  }
+
+  #like-btn.bump svg{
+    animation: heartBump 0.4s ease;
+  }
+
+  @keyframes heartBump{
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.35); }
+    60%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+
+  #like-btn .count{
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+
+  video{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .social{
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.6s ease 0.15s, transform 0.6s ease 0.15s;
+  }
+
+  .social.show{
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .social a{
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: rgba(255,255,255,0.85);
+    text-decoration: none;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    padding: 12px 26px;
+    border: 1px solid var(--accent, rgba(255,255,255,0.3));
+    border-radius: 999px;
+    box-shadow: 0 0 24px -6px var(--accent, transparent);
+    transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .social a svg{
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .social a:hover,
+  .social a:focus-visible{
+    color: #fff;
+    background: rgba(255,255,255,0.07);
+    box-shadow: 0 0 32px -4px var(--accent, rgba(255,255,255,0.5));
+  }
+
+  .page[data-index="0"] .social a{ --accent: #2AABEE; }
+  .page[data-index="1"] .social a{ --accent: #5865F2; }
+
+  @media (prefers-reduced-motion: reduce){
+    .ring::before{ animation: none; }
+    .frame, .social, #tabs{ transition: opacity 0.3s linear; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="ambient"></div>
+
+  <div id="brand">Kofeman</div>
+
+  <div id="gate" role="button" tabindex="0" aria-label="Нажмите, чтобы начать">
+    <div id="particles"></div>
+    <div class="ring">
+      <div class="pulse-ring"></div>
+      <div class="pulse-ring"></div>
+      <div class="pulse-ring"></div>
+      <svg viewBox="0 0 40 40">
+        <path class="k-stroke" d="M15 11l14 9-14 9z"/>
+      </svg>
+    </div>
+    <p id="tap-text">Коснись экрана</p>
+  </div>
+
+  <div id="tabs">
+    <button data-page="0" class="active">Telegram</button>
+    <button data-page="1">Discord</button>
+  </div>
+
+  <div id="stage">
+
+    <!-- Страница 1 -->
+    <div class="page active" data-index="0">
+      <div class="frame">
+        <video
+          class="v"
+          src="telegram.mp4"
+          playsinline
+          loop
+          preload="auto"
+        ></video>
+        <button class="like-btn" data-page="0" aria-label="Нравится">
+          <svg viewBox="0 0 24 24"><path class="heart-outline" d="M12 21s-7.5-5.1-10-9.3C-0.2 8 1.3 4.5 4.8 4c2.1-0.3 4 0.8 5.2 2.6C11.2 4.8 13.1 3.7 15.2 4c3.5 0.5 5 4 2.8 7.7C19.5 15.9 12 21 12 21z"/></svg>
+          <span class="count">0</span>
+        </button>
+      </div>
+      <div class="social">
+        <a href="https://t.me/Koffecito" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.05 3.16 2.7 10.3c-1.24.5-1.23 1.2-.23 1.5l4.7 1.47 1.82 5.6c.22.6.11.85.75.85.5 0 .72-.23 1-.5l2.4-2.32 4.75 3.5c.87.5 1.5.23 1.72-.8l3.1-14.6c.32-1.27-.48-1.84-1.66-1.34Zm-11.9 10.2-1.1-3.6L17.9 6.1c.32-.2.6.05.35.28l-8.2 7.4-.7 3.4-.2-3.42Z"/></svg>
+          <span class="open-text">Открыть</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Страница 2 -->
+    <div class="page" data-index="1">
+      <div class="frame">
+        <video
+          class="v"
+          src="discord.mp4"
+          playsinline
+          loop
+          preload="auto"
+        ></video>
+        <button class="like-btn" data-page="1" aria-label="Нравится">
+          <svg viewBox="0 0 24 24"><path class="heart-outline" d="M12 21s-7.5-5.1-10-9.3C-0.2 8 1.3 4.5 4.8 4c2.1-0.3 4 0.8 5.2 2.6C11.2 4.8 13.1 3.7 15.2 4c3.5 0.5 5 4 2.8 7.7C19.5 15.9 12 21 12 21z"/></svg>
+          <span class="count">0</span>
+        </button>
+      </div>
+      <div class="social">
+        <a href="https://discord.com/users/1174068802804273242" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.27 5.33A18.27 18.27 0 0 0 14.86 4c-.2.36-.42.84-.58 1.22a16.9 16.9 0 0 0-4.56 0A9.6 9.6 0 0 0 9.14 4a18.2 18.2 0 0 0-4.42 1.34C1.9 9.1 1.15 12.77 1.52 16.4a18.4 18.4 0 0 0 5.6 2.83c.45-.62.86-1.28 1.2-1.98-.66-.25-1.28-.55-1.87-.92.16-.12.31-.24.46-.37 3.6 1.67 7.5 1.67 11.06 0 .15.13.3.25.46.37-.6.37-1.22.67-1.88.92.35.7.75 1.36 1.2 1.98a18.3 18.3 0 0 0 5.6-2.83c.45-4.2-.66-7.83-2.98-11.07ZM8.68 14.1c-.98 0-1.78-.9-1.78-2s.78-2 1.78-2c1 0 1.8.91 1.78 2 0 1.1-.79 2-1.78 2Zm6.65 0c-.98 0-1.78-.9-1.78-2s.78-2 1.78-2c1 0 1.8.91 1.78 2 0 1.1-.78 2-1.78 2Z"/></svg>
+          <span class="open-text">Открыть</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <canvas id="sampler" width="16" height="9" style="display:none"></canvas>
+
+  <script>
+    const gate = document.getElementById('gate');
+    const brand = document.getElementById('brand');
+    const tabs = document.getElementById('tabs');
+    const particlesBox = document.getElementById('particles');
+    const tapText = document.getElementById('tap-text');
+    const openTexts = document.querySelectorAll('.open-text');
+
+    // переводы под язык устройства посетителя
+    const translations = {
+      ru: { tap: 'Коснись экрана', open: 'Открыть' },
+      en: { tap: 'Tap the screen', open: 'Open' },
+      es: { tap: 'Toca la pantalla', open: 'Abrir' },
+      pt: { tap: 'Toque na tela', open: 'Abrir' }
+    };
+
+    const detectedLang = (navigator.language || 'ru').slice(0, 2).toLowerCase();
+    const lang = translations[detectedLang] ? detectedLang : 'ru';
+    const t = translations[lang];
+
+    tapText.textContent = t.tap;
+    openTexts.forEach((el) => { el.textContent = t.open; });
+
+    // пасхалка: долгий тап по нику
+    let pressTimer = null;
+    function triggerEasterEgg(){
+      const rect = brand.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const count = 14;
+      for (let i = 0; i < count; i++){
+        const spark = document.createElement('div');
+        spark.className = 'spark';
+        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+        const dist = 36 + Math.random() * 40;
+        spark.style.left = cx + 'px';
+        spark.style.top = cy + 'px';
+        spark.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+        spark.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+        document.body.appendChild(spark);
+        setTimeout(() => spark.remove(), 850);
+      }
+      brand.classList.add('pulse-once');
+      setTimeout(() => brand.classList.remove('pulse-once'), 700);
+    }
+
+    brand.addEventListener('pointerdown', () => {
+      pressTimer = setTimeout(triggerEasterEgg, 600);
+    });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach((evt) => {
+      brand.addEventListener(evt, () => clearTimeout(pressTimer));
+    });
+
+    (function spawnParticles(){
+      const count = 16;
+      const segment = 100 / count;
+      for (let i = 0; i < count; i++){
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const duration = 8 + Math.random() * 10;
+        // равномерно делим ширину экрана на полосы и ставим частицу
+        // в случайное место внутри своей полосы — исключает перекос
+        // в одну сторону, который даёт чистый Math.random() по всей ширине
+        const left = i * segment + Math.random() * segment;
+        p.style.left = left + '%';
+        p.style.setProperty('--drift', (Math.random() * 60 - 30) + 'px');
+        p.style.animationDuration = duration + 's';
+        // отрицательная задержка — частица стартует уже "в полёте",
+        // а не с нуля, поэтому эффект виден сразу при открытии экрана
+        p.style.animationDelay = (-Math.random() * duration) + 's';
+        particlesBox.appendChild(p);
+      }
+    })();
+    const pages = [...document.querySelectorAll('.page')];
+    const tabButtons = [...tabs.querySelectorAll('button')];
+    const sampler = document.getElementById('sampler');
+    const ctx = sampler.getContext('2d', { willReadFrequently: true });
+    const root = document.documentElement;
+
+    let started = false;
+    let current = 0;
+    let colorState = [ [10,10,12], [10,10,12], [10,10,12] ];
+
+    function activeVideo(){
+      return pages[current].querySelector('video');
+    }
+
+    function start(){
+      if (started) return;
+      started = true;
+
+      gate.classList.add('hidden');
+      brand.classList.add('show');
+      tabs.classList.add('show');
+
+      showPage(0, true);
+      sampleLoop();
+    }
+
+    gate.addEventListener('click', start);
+    gate.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') start();
+    });
+
+    function showPage(index, isFirst = false){
+      const prevVideo = activeVideo();
+      if (!isFirst && prevVideo){
+        prevVideo.pause();
+      }
+
+      pages.forEach((p, i) => p.classList.toggle('active', i === index));
+      tabButtons.forEach((b, i) => b.classList.toggle('active', i === index));
+      current = index;
+
+      const frame = pages[index].querySelector('.frame');
+      const social = pages[index].querySelector('.social');
+      const video = pages[index].querySelector('video');
+
+      // сброс анимации появления, чтобы срабатывала при каждом переключении
+      frame.classList.remove('show');
+      social.classList.remove('show');
+      requestAnimationFrame(() => {
+        frame.classList.add('show');
+        social.classList.add('show');
+      });
+
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    }
+
+    tabButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.page);
+        if (idx !== current) showPage(idx);
+      });
+    });
+
+    // клавиатура
+    window.addEventListener('keydown', (e) => {
+      if (!started) return;
+      if (e.key === 'ArrowRight') showPage(Math.min(current + 1, pages.length - 1));
+      if (e.key === 'ArrowLeft')  showPage(Math.max(current - 1, 0));
+    });
+
+    // свайп на телефоне
+    let touchStartX = null;
+    window.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+    });
+    window.addEventListener('touchend', (e) => {
+      if (touchStartX === null || !started) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 50){
+        if (dx < 0) showPage(Math.min(current + 1, pages.length - 1));
+        else        showPage(Math.max(current - 1, 0));
+      }
+      touchStartX = null;
+    });
+
+    function sampleLoop(){
+      const video = activeVideo();
+      if (video && video.readyState >= 2) {
+        try{
+          ctx.drawImage(video, 0, 0, sampler.width, sampler.height);
+          const { data } = ctx.getImageData(0, 0, sampler.width, sampler.height);
+
+          const zones = [
+            pickZone(data, 0, 0, 6, 5),
+            pickZone(data, 5, 2, 11, 7),
+            pickZone(data, 10, 4, 16, 9),
+          ];
+
+          zones.forEach((rgb, i) => {
+            colorState[i] = lerpColor(colorState[i], rgb, 0.06);
+          });
+
+          root.style.setProperty('--bg-1', rgbStr(colorState[0]));
+          root.style.setProperty('--bg-2', rgbStr(colorState[1]));
+          root.style.setProperty('--bg-3', rgbStr(colorState[2]));
+        } catch(e){
+          // CORS помешал считать пиксели — просто не обновляем фон в этом кадре
+        }
+      }
+      requestAnimationFrame(sampleLoop);
+    }
+
+    function pickZone(data, x0, y0, x1, y1){
+      let r=0,g=0,b=0,n=0;
+      const w = sampler.width;
+      for (let y=y0; y<y1; y++){
+        for (let x=x0; x<x1; x++){
+          const i = (y*w + x) * 4;
+          r += data[i]; g += data[i+1]; b += data[i+2];
+          n++;
+        }
+      }
+      return n ? [r/n, g/n, b/n] : [10,10,12];
+    }
+
+    function lerpColor(a, b, t){
+      return [
+        a[0] + (b[0]-a[0]) * t,
+        a[1] + (b[1]-a[1]) * t,
+        a[2] + (b[2]-a[2]) * t,
+      ];
+    }
+
+    function rgbStr([r,g,b]){
+      return `rgb(${r|0}, ${g|0}, ${b|0})`;
+    }
+  </script>
+</body>
+</html>
