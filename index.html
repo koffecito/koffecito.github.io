@@ -566,7 +566,7 @@
       tabs.classList.add('show');
 
       showPage(0, true);
-      sampleLoop();
+      requestAnimationFrame(sampleLoop);
     }
 
     gate.addEventListener('click', start);
@@ -629,28 +629,38 @@
       touchStartX = null;
     });
 
-    function sampleLoop(){
-      const video = activeVideo();
-      if (video && video.readyState >= 2) {
-        try{
-          ctx.drawImage(video, 0, 0, sampler.width, sampler.height);
-          const { data } = ctx.getImageData(0, 0, sampler.width, sampler.height);
+    // сколько раз в секунду пересчитываем фон (было 60, тяжело для слабых телефонов)
+    const SAMPLE_FPS = 8;
+    const SAMPLE_INTERVAL = 1000 / SAMPLE_FPS;
+    let lastSampleTime = 0;
 
-          const zones = [
-            pickZone(data, 0, 0, 6, 5),
-            pickZone(data, 5, 2, 11, 7),
-            pickZone(data, 10, 4, 16, 9),
-          ];
+    function sampleLoop(now){
+      if (now - lastSampleTime >= SAMPLE_INTERVAL){
+        lastSampleTime = now;
+        const video = activeVideo();
+        if (video && video.readyState >= 2) {
+          try{
+            ctx.drawImage(video, 0, 0, sampler.width, sampler.height);
+            const { data } = ctx.getImageData(0, 0, sampler.width, sampler.height);
 
-          zones.forEach((rgb, i) => {
-            colorState[i] = lerpColor(colorState[i], rgb, 0.06);
-          });
+            const zones = [
+              pickZone(data, 0, 0, 6, 5),
+              pickZone(data, 5, 2, 11, 7),
+              pickZone(data, 10, 4, 16, 9),
+            ];
 
-          root.style.setProperty('--bg-1', rgbStr(colorState[0]));
-          root.style.setProperty('--bg-2', rgbStr(colorState[1]));
-          root.style.setProperty('--bg-3', rgbStr(colorState[2]));
-        } catch(e){
-          // CORS помешал считать пиксели — просто не обновляем фон в этом кадре
+            // t увеличен, т.к. функция теперь вызывается реже — скорость
+            // "подъезда" цвета к целевому остаётся похожей на исходную
+            zones.forEach((rgb, i) => {
+              colorState[i] = lerpColor(colorState[i], rgb, 0.35);
+            });
+
+            root.style.setProperty('--bg-1', rgbStr(colorState[0]));
+            root.style.setProperty('--bg-2', rgbStr(colorState[1]));
+            root.style.setProperty('--bg-3', rgbStr(colorState[2]));
+          } catch(e){
+            // CORS помешал считать пиксели — просто не обновляем фон в этом кадре
+          }
         }
       }
       requestAnimationFrame(sampleLoop);
