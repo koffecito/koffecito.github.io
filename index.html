@@ -3,15 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Реакция</title>
+<title>Koffecito</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="512x512" href="favicon-512.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="description" content="Koffecito — Telegram и Discord">
+<meta property="og:title" content="Koffecito">
+<meta property="og:description" content="Заходи в Telegram и Discord">
+<meta property="og:image" content="https://koffecito.github.io/og-image.jpg">
+<meta property="og:url" content="https://koffecito.github.io">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Koffecito">
+<meta name="twitter:description" content="Заходи в Telegram и Discord">
+<meta name="twitter:image" content="https://koffecito.github.io/og-image.jpg">
 <style>
-  @font-face{
-    font-family: 'ST Rome Trial';
-    src: url('STRomeTrial-Medium.woff') format('woff');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-  }
   @font-face{
     font-family: 'ST Rome Trial';
     src: url('STRomeTrial-Bold.woff') format('woff');
@@ -29,7 +35,12 @@
     --glow-y: 40%;
   }
 
-  *{ box-sizing: border-box; margin:0; padding:0; }
+  *{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
 
   html, body{
     height: 100%;
@@ -59,6 +70,14 @@
     pointer-events: none;
   }
 
+  #vignette{
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.55) 100%);
+    pointer-events: none;
+  }
+
   #brand{
     position: fixed;
     top: 22px;
@@ -71,7 +90,7 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     opacity: 0;
-    transition: opacity 0.6s ease 0.15s, text-shadow 0.3s ease;
+    transition: opacity 0.6s ease 0.5s, text-shadow 0.3s ease;
     pointer-events: none;
     user-select: none;
     -webkit-user-select: none;
@@ -103,6 +122,46 @@
     100% { transform: translate(var(--tx), var(--ty)) scale(0.3); opacity: 0; }
   }
 
+  #easter-badge{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 16px 26px;
+    background: rgba(20,20,22,0.85);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+  }
+
+  #easter-badge.show{
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  #easter-badge .badge-title{
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  #easter-badge .badge-message{
+    color: rgba(255,255,255,0.7);
+    font-size: 12.5px;
+    max-width: 260px;
+  }
+
   /* --- вкладки переключения страниц --- */
   #tabs{
     position: fixed;
@@ -118,25 +177,40 @@
     border-radius: 999px;
     backdrop-filter: blur(10px);
     opacity: 0;
-    transition: opacity 0.6s ease 0.2s;
+    transition: opacity 0.6s ease 0.55s;
   }
 
   #tabs.show{ opacity: 1; }
 
+  #tab-indicator{
+    position: absolute;
+    top: 5px;
+    bottom: 5px;
+    left: 5px;
+    width: 0;
+    background: #ffffff;
+    border-radius: 999px;
+    transition: left 0.3s ease, width 0.3s ease;
+    z-index: 0;
+  }
+
   #tabs button{
     all: unset;
+    position: relative;
+    z-index: 1;
     cursor: pointer;
     padding: 8px 18px;
+    font-family: 'ST Rome Trial', sans-serif;
+    font-weight: 700;
     font-size: 13px;
     letter-spacing: 0.04em;
     color: rgba(255,255,255,0.6);
     border-radius: 999px;
-    transition: color 0.25s ease, background 0.25s ease;
+    transition: color 0.25s ease;
   }
 
   #tabs button.active{
     color: #050506;
-    background: #ffffff;
   }
 
   #stage{
@@ -163,7 +237,7 @@
     background: rgba(5,5,6,0.4);
     backdrop-filter: blur(2px);
     cursor: pointer;
-    transition: opacity 0.6s ease;
+    transition: opacity 0.9s ease-in-out, backdrop-filter 0.9s ease-in-out;
   }
 
   #gate.hidden{
@@ -280,15 +354,17 @@
     border-radius: 18px;
     overflow: hidden;
     background: #000;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 70px -20px var(--bg-2);
     opacity: 0;
     transform: scale(0.96);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    filter: blur(10px);
+    transition: opacity 0.9s ease-out, transform 0.9s ease-out, filter 0.9s ease-out;
   }
 
   .frame.show{
     opacity: 1;
     transform: scale(1);
+    filter: blur(0);
   }
 
   #like-btn{
@@ -363,6 +439,8 @@
     gap: 9px;
     color: rgba(255,255,255,0.85);
     text-decoration: none;
+    font-family: 'ST Rome Trial', sans-serif;
+    font-weight: 700;
     font-size: 14px;
     letter-spacing: 0.06em;
     padding: 12px 26px;
@@ -397,6 +475,11 @@
 <body>
 
   <div id="ambient"></div>
+  <div id="vignette"></div>
+  <div id="easter-badge">
+    <span class="badge-title">🏆 Секрет найден</span>
+    <span class="badge-message">Спасибо, что заглянул сюда — не думал, что кто‑то это найдёт 🤍</span>
+  </div>
 
   <div id="brand">Kofeman</div>
 
@@ -414,6 +497,7 @@
   </div>
 
   <div id="tabs">
+    <div id="tab-indicator"></div>
     <button data-page="0" class="active">Telegram</button>
     <button data-page="1">Discord</button>
   </div>
@@ -472,6 +556,7 @@
 
   <script>
     const gate = document.getElementById('gate');
+    document.querySelectorAll('video.v').forEach((v) => v.load());
     const brand = document.getElementById('brand');
     const tabs = document.getElementById('tabs');
     const particlesBox = document.getElementById('particles');
@@ -514,6 +599,11 @@
       }
       brand.classList.add('pulse-once');
       setTimeout(() => brand.classList.remove('pulse-once'), 700);
+
+      const badge = document.getElementById('easter-badge');
+      badge.classList.add('show');
+      clearTimeout(badge._hideTimer);
+      badge._hideTimer = setTimeout(() => badge.classList.remove('show'), 2600);
     }
 
     brand.addEventListener('pointerdown', () => {
@@ -545,6 +635,7 @@
     })();
     const pages = [...document.querySelectorAll('.page')];
     const tabButtons = [...tabs.querySelectorAll('button')];
+    const tabIndicator = document.getElementById('tab-indicator');
     const sampler = document.getElementById('sampler');
     const ctx = sampler.getContext('2d', { willReadFrequently: true });
     const root = document.documentElement;
@@ -566,7 +657,15 @@
       tabs.classList.add('show');
 
       showPage(0, true);
-      requestAnimationFrame(sampleLoop);
+      startSampling();
+
+      // после завершения перехода полностью убираем экран жеста
+      // из рендеринга — иначе частицы и кольца продолжали бы
+      // анимироваться вхолостую бесконечно, даже будучи невидимыми
+      gate.addEventListener('transitionend', function onEnd(){
+        gate.style.display = 'none';
+        gate.removeEventListener('transitionend', onEnd);
+      });
     }
 
     gate.addEventListener('click', start);
@@ -583,6 +682,10 @@
       pages.forEach((p, i) => p.classList.toggle('active', i === index));
       tabButtons.forEach((b, i) => b.classList.toggle('active', i === index));
       current = index;
+
+      const activeBtn = tabButtons[index];
+      tabIndicator.style.left = activeBtn.offsetLeft + 'px';
+      tabIndicator.style.width = activeBtn.offsetWidth + 'px';
 
       const frame = pages[index].querySelector('.frame');
       const social = pages[index].querySelector('.social');
@@ -629,42 +732,70 @@
       touchStartX = null;
     });
 
-    // сколько раз в секунду пересчитываем фон (было 60, тяжело для слабых телефонов)
-    const SAMPLE_FPS = 8;
-    const SAMPLE_INTERVAL = 1000 / SAMPLE_FPS;
-    let lastSampleTime = 0;
+    let sampleTimer = null;
 
-    function sampleLoop(now){
-      if (now - lastSampleTime >= SAMPLE_INTERVAL){
-        lastSampleTime = now;
-        const video = activeVideo();
-        if (video && video.readyState >= 2) {
-          try{
-            ctx.drawImage(video, 0, 0, sampler.width, sampler.height);
-            const { data } = ctx.getImageData(0, 0, sampler.width, sampler.height);
+    function sampleTick(){
+      const video = activeVideo();
+      if (video && video.readyState >= 2) {
+        try{
+          ctx.drawImage(video, 0, 0, sampler.width, sampler.height);
+          const { data } = ctx.getImageData(0, 0, sampler.width, sampler.height);
 
-            const zones = [
-              pickZone(data, 0, 0, 6, 5),
-              pickZone(data, 5, 2, 11, 7),
-              pickZone(data, 10, 4, 16, 9),
-            ];
+          const zones = [
+            pickZone(data, 0, 0, 6, 5),
+            pickZone(data, 5, 2, 11, 7),
+            pickZone(data, 10, 4, 16, 9),
+          ];
 
-            // t увеличен, т.к. функция теперь вызывается реже — скорость
-            // "подъезда" цвета к целевому остаётся похожей на исходную
-            zones.forEach((rgb, i) => {
-              colorState[i] = lerpColor(colorState[i], rgb, 0.35);
-            });
+          // альфа выше, чем раньше: реже считаем, но заметнее двигаем
+          // цвет за шаг, чтобы фон успевал за видео при меньшей частоте
+          zones.forEach((rgb, i) => {
+            colorState[i] = lerpColor(colorState[i], rgb, 0.35);
+          });
 
-            root.style.setProperty('--bg-1', rgbStr(colorState[0]));
-            root.style.setProperty('--bg-2', rgbStr(colorState[1]));
-            root.style.setProperty('--bg-3', rgbStr(colorState[2]));
-          } catch(e){
-            // CORS помешал считать пиксели — просто не обновляем фон в этом кадре
-          }
+          root.style.setProperty('--bg-1', rgbStr(colorState[0]));
+          root.style.setProperty('--bg-2', rgbStr(colorState[1]));
+          root.style.setProperty('--bg-3', rgbStr(colorState[2]));
+        } catch(e){
+          // CORS помешал считать пиксели — просто не обновляем фон в этом кадре
         }
       }
-      requestAnimationFrame(sampleLoop);
     }
+
+    function startSampling(){
+      if (sampleTimer) return;
+      // ~8 раз в секунду вместо 60 — держит эффект живым,
+      // но не грузит процессор на слабых телефонах
+      sampleTimer = setInterval(sampleTick, 120);
+    }
+
+    function stopSampling(){
+      clearInterval(sampleTimer);
+      sampleTimer = null;
+    }
+
+    // сворачивание вкладки/приложения: останавливаем и подсчёт цвета,
+    // и само видео (со звуком) — иначе оно играет вхолостую в фоне,
+    // тратя батарею и трафик, пока человек не смотрит на экран
+    let autoPaused = false;
+    document.addEventListener('visibilitychange', () => {
+      if (!started) return;
+      const video = activeVideo();
+
+      if (document.hidden){
+        stopSampling();
+        if (video && !video.paused){
+          video.pause();
+          autoPaused = true;
+        }
+      } else {
+        startSampling();
+        if (video && autoPaused){
+          video.play().catch(() => {});
+          autoPaused = false;
+        }
+      }
+    });
 
     function pickZone(data, x0, y0, x1, y1){
       let r=0,g=0,b=0,n=0;
